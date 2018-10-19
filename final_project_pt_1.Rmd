@@ -1,0 +1,27 @@
+---
+title: "Olympic Succcess and Civic Engagement"
+author: "Dillon M. Smith"
+date: "10/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE)
+# Load necessary libraries
+library(tidyverse)
+library(knitr)
+library(janitor)
+library(kableExtra)
+library(purrr)
+
+# Load in data sets
+raw_summer <- read_csv("summer.csv")
+raw_winter <- read_csv("winter.csv")
+# One more dataset will be loaded in containing data on civic engagement and voter turnout
+```
+
+# Brief Overview
+
+
