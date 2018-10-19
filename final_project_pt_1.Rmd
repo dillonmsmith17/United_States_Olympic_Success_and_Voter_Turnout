@@ -24,4 +24,4 @@ raw_winter <- read_csv("winter.csv")
 
 # Brief Overview
 
-
+The data here includes information on all of the Olympic Games (Summer and Winter) beginning with the 1896 Olympics in Athens. It has variables representing the Olympic year and location, sport and discipline, and country, athlete, and medal for each event. There are `r nrow(raw_summer)` observations in the summer dataset (representing every medal in every event in every Summer Olympic Games) and `r nrow(raw_winter)` observations in the winter dataset (representing every medal in every event in every Winter Olympic Games). Since 1896, there have been `r length(unique(raw_summer$Year))` Summer Games and `r length(unique(raw_winter$Year))` Winter Games
