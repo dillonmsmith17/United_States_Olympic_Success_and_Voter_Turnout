@@ -1,0 +1,12 @@
+name: my_first_app
+title: my_first_app
+username:
+account: dillonmsmith17
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 552250
+bundleId: 1681682
+url: https://dillonmsmith17.shinyapps.io/my_first_app/
+when: 1541373225.70485
+asMultiple: FALSE
+asStatic: FALSE
