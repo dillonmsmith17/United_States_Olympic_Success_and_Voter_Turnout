@@ -7,7 +7,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 # load necessary libraries
-library(tidyverse)
 library(knitr)
 library(stringr)
 library(fs)
@@ -15,6 +14,8 @@ library(haven)
 library(sjlabelled)
 library(lubridate)
 library(kableExtra)
+library(readxl)
+library(tidyverse)
 
 # set up document settings
 opts_chunk$set(echo = FALSE,
@@ -22,3 +23,21 @@ opts_chunk$set(echo = FALSE,
                error = FALSE,
                warning = FALSE)
 ```
+
+```{r load_data}
+winter <- read_csv("winter.csv")
+summer <- read_csv("summer.csv")
+presidential <- read_excel("presidential_turnouts.xls", 
+                           skip = 1,
+                           col_types = "numeric")
+midterm <- read_excel("midterm_turnouts.xls",
+                      skip = 1)
+```
+
+```{r tidy_data}
+elections <- bind_rows(presidential, midterm, .id = "source") %>% 
+  arrange(YEAR) %>% 
+  mutate(source = case_when(source == 2 ~ "midterm",
+                            source == 1 ~ "presidential"))
+```
+
