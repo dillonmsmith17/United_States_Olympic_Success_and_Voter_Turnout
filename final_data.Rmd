@@ -25,11 +25,24 @@ opts_chunk$set(echo = FALSE,
 ```
 
 ```{r load_data}
+# read in winter Olympic data
 winter <- read_csv("winter.csv")
+
+# read in summer Olympic data
 summer <- read_csv("summer.csv")
+
+# hard code US Olympic Medal Ranks for all winter Olympics in winter.csv
+winter_ranks <- c(5, 2, 1, 8, 4, 2, 6, 3, 8, 9, 5, 3, 3, 3, 9, 5, 5, 5, 3, 2, 3, 4)
+
+# hard code US Olympic Medal Ranks for all summer Olympics in summer.csv
+summer_ranks <- c(1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 2, 1, 1, 2, 3, 1, 3, 2, 1, 1, 1, 2, 1)
+
+# read in presidential election data
 presidential <- read_excel("presidential_turnouts.xls", 
                            skip = 1,
                            col_types = "numeric")
+
+# read in midterm election data
 midterm <- read_excel("midterm_turnouts.xls",
                       skip = 1)
 ```
@@ -37,7 +50,56 @@ midterm <- read_excel("midterm_turnouts.xls",
 ```{r tidy_data}
 elections <- bind_rows(presidential, midterm, .id = "source") %>% 
   arrange(YEAR) %>% 
-  mutate(source = case_when(source == 2 ~ "midterm",
-                            source == 1 ~ "presidential"))
+  mutate(source = case_when(source == 1 ~ "presidential",
+                            source == 2 ~ "midterm")) %>% 
+  rename_all(tolower)
+
+olympics <- bind_rows(summer, winter, .id = "source") %>% 
+  arrange(Year) %>% 
+  mutate(source = case_when(source == 1 ~ "summer",
+                            source == 2 ~ "winter")) %>% 
+  rename_all(tolower)
+
+winter_total <- winter %>% 
+  rename_all(tolower) %>% 
+  group_by(year) %>% 
+  count(medal) %>% 
+  spread(key = medal, value = "n") %>% 
+  rename(total_gold = "Gold",
+         total_silver = "Silver",
+         total_bronze = "Bronze")
+
+summer_total <- summer %>% 
+  rename_all(tolower) %>% 
+  group_by(year) %>% 
+  count(medal) %>% 
+  spread(key = medal, value = "n") %>% 
+  rename(total_gold = "Gold",
+         total_silver = "Silver",
+         total_bronze = "Bronze")
+
+winter_us <- winter %>% 
+  rename_all(tolower) %>% 
+  filter(country == "USA") %>% 
+  group_by(year) %>% 
+  count(medal) %>% 
+  spread(key = medal, value = "n") %>% 
+  rename(us_gold = "Gold",
+         us_silver = "Silver",
+         us_bronze = "Bronze")
+winter_us$rank <- winter_ranks
+
+summer_us <- summer %>% 
+  rename_all(tolower) %>% 
+  filter(country == "USA") %>% 
+  group_by(year) %>% 
+  count(medal) %>% 
+  spread(key = medal, value = "n") %>% 
+  rename(us_gold = "Gold",
+         us_silver = "Silver",
+         us_bronze = "Bronze")
+summer_us$rank <- summer_ranks
+
+
 ```
 
