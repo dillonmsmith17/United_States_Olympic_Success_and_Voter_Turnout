@@ -13,8 +13,8 @@ library(fs)
 library(haven)
 library(sjlabelled)
 library(lubridate)
-library(kableExtra)
 library(readxl)
+library(stargazer)
 library(tidyverse)
 
 # set up document settings
@@ -56,7 +56,11 @@ elections <- bind_rows(presidential, midterm, .id = "source") %>%
   mutate(source = case_when(source == 1 ~ "presidential",
                             source == 2 ~ "midterm")) %>%
   # replace uppercase column names with lowercase
-  rename_all(tolower)
+  rename_all(tolower) %>% 
+  # rename % with percent
+  rename(percent = "%") %>% 
+  # create difference variable
+  transform(percent_change = ave(percent, source, FUN = function(x) c(NA, diff(x))))
 
 # create olympics dataframe combining winter and summer datasets
 olympics <- bind_rows(summer, winter, .id = "source") %>% 
@@ -109,11 +113,11 @@ winter_us <- winter %>%
   # count how many medals were awarded in each olympic games
   count(medal) %>% 
   # spread the data by medal type
-  spread(key = medal, value = "n") %>% 
+  spread(key = medal, value = "n", fill = 0) %>% 
   # rename medal columns
-  rename(total_gold = "Gold",
-         total_silver = "Silver",
-         total_bronze = "Bronze")
+  rename(us_gold = "Gold",
+         us_silver = "Silver",
+         us_bronze = "Bronze")
 # add hard coded US medal count rankings
 winter_us$rank <- winter_ranks
 
@@ -128,16 +132,100 @@ summer_us <- summer %>%
   # count how many medals were awarded in each olympic games
   count(medal) %>% 
   # spread the data by medal type
-  spread(key = medal, value = "n") %>% 
+  spread(key = medal, value = "n", fill = 0) %>% 
   # rename medal columns
-  rename(total_gold = "Gold",
-         total_silver = "Silver",
-         total_bronze = "Bronze")
+  rename(us_gold = "Gold",
+         us_silver = "Silver",
+         us_bronze = "Bronze")
 # add hard coded US medal count rankings
 summer_us$rank <- summer_ranks
-
-winter_joined <- left_join(winter_us, elections, by = "year")
-
-summer_joined <- left_join(summer_us, elections, by = "year")
 ```
 
+```{r join_data}
+# create final winter data
+winter_final <- left_join(winter_us, winter_total, by = "year") %>% 
+  # create percent variables for gold and total medals
+  mutate(gold_percent = round(us_gold/total_gold, 3),
+         medal_percent = round((us_gold + us_silver + us_bronze) / (total_gold + total_silver + total_bronze), 3)) %>% 
+  # create change variable for gold and total medals
+  transform(gold_change = ave(gold_percent, FUN = function(x) c(NA, diff(x))),
+            total_change = ave(medal_percent, FUN = function(x) c(NA, diff(x))))
+# create final summer data
+summer_final <- left_join(summer_us, summer_total, by = "year") %>% 
+  # create percent variables for gold and total medals
+  mutate(gold_percent = round(us_gold/total_gold, 3),
+         medal_percent = round((us_gold + us_silver + us_bronze) / (total_gold + total_silver + total_bronze), 3)) %>% 
+  # create change cariable for gold and total medals
+  transform(gold_change = ave(gold_percent, FUN = function(x) c(NA, diff(x))),
+            total_change = ave(medal_percent, FUN = function(x) c(NA, diff(x))))
+
+# join winter data and elections data by year
+winter_joined <- left_join(winter_final, elections, by = "year") %>% 
+  # select important variables
+  select(year, rank, gold_percent, gold_change, medal_percent, total_change, source, percent, percent_change) %>% 
+  # select variables with voting data
+  head(20)
+
+# join summer data and elections data by year
+summer_joined <- left_join(summer_final, elections, by = "year") %>% 
+  # select important variables
+  select(year, rank, gold_percent, gold_change, medal_percent, total_change, source, percent, percent_change) %>% 
+  # select variables with voting data 
+  head(25)
+```
+
+```{r create_lm}
+# create linear model for percent
+winter_lm <- glm(percent ~ gold_percent + gold_change + medal_percent + total_change, 
+                 data = winter_joined)
+# create linear model for change in percent 
+winter_lm_change <- glm(percent_change ~ gold_percent + gold_change + medal_percent + total_change, 
+                        data = winter_joined)
+ 
+# create linear model for percent 
+summer_lm <- glm(percent ~ gold_percent + gold_change + medal_percent + total_change, 
+                 data = summer_joined)
+# create linear model for change in percent 
+summer_lm_change <- glm(percent_change ~ gold_percent + gold_change + medal_percent + total_change, 
+                        data = summer_joined)
+```
+
+# Winter Data
+
+```{r}
+str(winter_joined)
+```
+
+# Winter Models
+
+### Percent
+
+```{r, results='asis'}
+stargazer(winter_lm, type = "html")
+```
+
+### Change in Percent
+
+```{r, results='asis'}
+stargazer(winter_lm_change, type = "html")
+```
+
+# Summer Data
+
+```{r}
+str(summer_joined)
+```
+
+# Summer Models
+
+### Percent
+
+```{r, results='asis'}
+stargazer(summer_lm, type = "html")
+```
+
+### Change in Percent
+
+```{r, results='asis'}
+stargazer(summer_lm_change, type = "html")
+```
