@@ -48,58 +48,96 @@ midterm <- read_excel("midterm_turnouts.xls",
 ```
 
 ```{r tidy_data}
+# create elections dataframe combining presidential and midterm datasets
 elections <- bind_rows(presidential, midterm, .id = "source") %>% 
+  # arrange by year in ascending order
   arrange(YEAR) %>% 
+  # mutate source variable to be easier to understand
   mutate(source = case_when(source == 1 ~ "presidential",
-                            source == 2 ~ "midterm")) %>% 
+                            source == 2 ~ "midterm")) %>%
+  # replace uppercase column names with lowercase
   rename_all(tolower)
 
+# create olympics dataframe combining winter and summer datasets
 olympics <- bind_rows(summer, winter, .id = "source") %>% 
+  # arrange by year un ascending order
   arrange(Year) %>% 
+  # mutate source variable to be easier to understand
   mutate(source = case_when(source == 1 ~ "summer",
                             source == 2 ~ "winter")) %>% 
+  # replace all uppercase column names with lowercase
   rename_all(tolower)
 
+# create summary statistics for winter olympic medal counts
 winter_total <- winter %>% 
+  # lowercase column names
   rename_all(tolower) %>% 
+  # group the data by year
   group_by(year) %>% 
+  # count how many medals were awarded in each olympic games
   count(medal) %>% 
+  # spread the data by medal type
   spread(key = medal, value = "n") %>% 
+  # rename medal columns
   rename(total_gold = "Gold",
          total_silver = "Silver",
          total_bronze = "Bronze")
 
+# create summary statistics for summer olympic medal counts
 summer_total <- summer %>% 
+  # lowercase column names
   rename_all(tolower) %>% 
+  # group the data by year
   group_by(year) %>% 
+  # count how many medals were awarded in each olympic games
   count(medal) %>% 
+  # spread the data by medal type
   spread(key = medal, value = "n") %>% 
+  # rename medal columns
   rename(total_gold = "Gold",
          total_silver = "Silver",
          total_bronze = "Bronze")
 
+# create summary statistics for US winter olympic medal counts
 winter_us <- winter %>% 
+  # lowercase column names
   rename_all(tolower) %>% 
+  # filter data for US results
   filter(country == "USA") %>% 
+  # group the data by year
   group_by(year) %>% 
+  # count how many medals were awarded in each olympic games
   count(medal) %>% 
+  # spread the data by medal type
   spread(key = medal, value = "n") %>% 
-  rename(us_gold = "Gold",
-         us_silver = "Silver",
-         us_bronze = "Bronze")
+  # rename medal columns
+  rename(total_gold = "Gold",
+         total_silver = "Silver",
+         total_bronze = "Bronze")
+# add hard coded US medal count rankings
 winter_us$rank <- winter_ranks
 
+# create summary statistics for US summer olympic medal counts
 summer_us <- summer %>% 
+  # lowercase column names
   rename_all(tolower) %>% 
+  # filter data for US results
   filter(country == "USA") %>% 
+  # group the data by year
   group_by(year) %>% 
+  # count how many medals were awarded in each olympic games
   count(medal) %>% 
+  # spread the data by medal type
   spread(key = medal, value = "n") %>% 
-  rename(us_gold = "Gold",
-         us_silver = "Silver",
-         us_bronze = "Bronze")
+  # rename medal columns
+  rename(total_gold = "Gold",
+         total_silver = "Silver",
+         total_bronze = "Bronze")
+# add hard coded US medal count rankings
 summer_us$rank <- summer_ranks
 
+winter_joined <- left_join(winter_us, elections, by = "year")
 
+summer_joined <- left_join(summer_us, elections, by = "year")
 ```
 
