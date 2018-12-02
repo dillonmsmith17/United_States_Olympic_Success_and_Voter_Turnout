@@ -7,21 +7,24 @@ library(plotly)
 library(knitr)
 library(scales)
 library(stargazer)
+library(ggrepel)
 library(tidyverse)
 
 data <- read_rds("final_data.rds")
 
-# Define UI for random distribution app ----
+# Define UI for olympic success/voter turnout rates app ----
 ui <- fluidPage(theme = shinytheme("flatly"),
   
   # App title ----
   navbarPage("U.S. Olympic Performance and Voter Turnout Rates for Presidential/Midterm Elections",
   
+    # create tab for graphs
     tabPanel("Graph",
-             # Sidebar layout with input and output definitions ----
+             # Sidebar layout with input and output definitions
              sidebarLayout(
-               # Sidebar panel for inputs ----
+               # Sidebar panel for inputs
                sidebarPanel(
+                 # input choices for x-axis variables
                  selectInput("x_axis",
                              "Independent Variable:",
                              choices = c("Total Medal Rank" = "rank",
@@ -30,28 +33,31 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                          "Total Medal Percentage" = "medal_percent",
                                          "Total Medal Change in Percentage" = "total_change")),
                  
+                 # add help text to explain choices
                  tags$h6(helpText("\"Total Medal Rank\" refers to the U.S.'s standing in the country rankings by total medal count. \"Gold Medal Percentage\" refers to the absolute percentage of gold medals awarded in a given Olympic Games the U.S. was awarded while \" Gold Medal Change in Percentage\" refers to the difference between this years gold medal percentage and that of the Olympics four years prior. Total Medal variables follow the same pattern as Gold Medal variables.")),
-                 # br() element to introduce extra vertical spacing ----
+                 # br() element to introduce extra vertical spacing
                  br(),
                  
-                 # Input: menu for the number of observations to generate ----
+                 # input choices for Olympics data to use
                  radioButtons("olympics",
                               "Olympic Season:",
                               choices = c("Summer" = "summer",
                                           "Winter" = "winter")),
                  
+                 # add help text to explain choices
                  tags$h6(helpText("\"Summer\" refers to the Summer Olympic Games contested every 4 years while \"Winter\" refers to the Winter Olympic Games contested every 4 years.")),
-                 # br() element to introduce extra vertical spacing ----
+                 # br() element to introduce extra vertical spacing
                  br(),
                  
-                 # Input: Select the random distribution type ----
+                 # input choices for y-axis variables
                  radioButtons("model_type", 
                               "Dependent Variable:",
                               c("Percentage" = "percent",
                                 "Change in Percentage" = "percent_change")),
                  
+                 # add help text to explain choices
                  tags$h6(helpText("\"Percent\" refers to the absolute percentage of the U.S. voting age population who voted in a given year's election. \"Change in Percentage\" refers to the difference between this years election and the election four years prior.")),
-                 # br() element to introduce extra vertical spacing ----
+                 # br() element to introduce extra vertical spacing
                  br(),
                  
                  # create checkbox for linear model
@@ -60,40 +66,43 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                value = TRUE)
                ),
              
-               # Main panel for displaying outputs ----
+               # Main panel for displaying plot output
                mainPanel(
-                 plotOutput("plot")
+                 plotOutput("plot"),
+                 htmlOutput("summary")
                )
              )
     ),
     
     tabPanel("Models",
-             # Sidebar layout with input and output definitions ----
+             # Sidebar layout with input and output definitions
              sidebarLayout(
-               # Sidebar panel for inputs ----
+               # Sidebar panel for inputs
                sidebarPanel(
-                 # Input: menu for the number of observations to generate ----
+                 # input choices for Olympics data to use
                  radioButtons("season",
                               "Olympic Season:",
                               choices = c("Summer" = "summer",
                                           "Winter" = "winter")),
                  
+                 # add help text to explain choices
                  tags$h6(helpText("\"Summer\" refers to the Summer Olympic Games contested every 4 years while \"Winter\" refers to the Winter Olympic Games contested every 4 years.")),
-                 # br() element to introduce extra vertical spacing ----
+                 # br() element to introduce extra vertical spacing
                  br(),
                  
-                 # Input: Select the random distribution type ----
+                 # input choices for regression response variable
                  radioButtons("response", 
                               "Dependent Variable:",
                               c("Percentage" = "percent",
                                 "Change in Percentage" = "percent_change")),
                  
+                 # add help text to explain choices
                  tags$h6(helpText("\"Percent\" refers to the absolute percentage of the U.S. voting age population who voted in a given year's election. \"Change in Percentage\" refers to the difference between this years election and the election four years prior.")),
-                 # br() element to introduce extra vertical spacing ----
+                 # br() element to introduce extra vertical spacing
                  br()
                ),
                
-               # Main panel for displaying outputs ----
+               # Main panel for displaying model output
                mainPanel(
                  htmlOutput("model")
                )
@@ -101,10 +110,11 @@ ui <- fluidPage(theme = shinytheme("flatly"),
     ),
     
     tabPanel("Insights",
-             # Sidebar layout with input and output definitions ----
+             # Sidebar layout with input and output definitions
              sidebarLayout(
-               # Sidebar panel for inputs ----
+               # Sidebar panel for inputs
                sidebarPanel(
+                 # input choices for insight year choices
                  selectInput("year",
                              "Years of Note:",
                              choices = c("1936" = 1936,
@@ -119,10 +129,11 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                                          "2000" = 2000,
                                          "2002" = 2002,
                                          "2008" = 2008)),
+                 # add help text to explain what "insights" are
                  tags$h6(helpText("* Years listed above are years for which the United States had one or more instances of surprising results/upsets in their favor. For each year there is a brief description of the surprising result, a link to find more information on that instance of the Olympic Games, and voter turnout information for that year."))
                  ),
                
-               # Main panel for displaying outputs ----
+               # Main panel for displaying insights output
                mainPanel(
                  htmlOutput("insights")
                )
@@ -134,6 +145,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
 # Define server logic for random distribution app ----
 server <- function(input, output) {
   
+  # create function to reactively change x-axis label
   x_label <- reactive({
     req(input$x_axis)
     if(input$x_axis == "rank"){
@@ -148,6 +160,7 @@ server <- function(input, output) {
       x_label <- "Total Medal Change in Percentage"
     }})
   
+  # create function to reactively change y-axis label
   y_label <- reactive({
     req(input$model_type)
     if(input$model_type == "percent"){
@@ -168,29 +181,44 @@ server <- function(input, output) {
         ggplot(aes_string(x = input$x_axis, y = input$model_type)) +
         geom_point() +
         geom_smooth(method = "lm", se = FALSE) + 
+        geom_label_repel(aes(label = year)) +
         labs(x = x_label(),
              y = y_label(),
              title = "Voter Turnout in Relation to Various Measures of Olympic Success",
-             subtitle = " X-Variables are each percentage point numbers (other than rank) so that conclusions can be drawn and related across variables.")
+             subtitle = " X-Variables are each percentage point numbers (other than rank) so that conclusions can be drawn and related across variables.",
+             caption = "Olympic data taken from Kaggle*, Voter data taken fromn Sage*.")
     }
     else {
       data %>% 
         filter(olympics == input$olympics) %>%
         ggplot(aes_string(x = input$x_axis, y = input$model_type)) +
         geom_point() +
+        geom_label_repel(aes(label = year)) +
         labs(x = x_label(),
              y = y_label(),
              title = "Voter Turnout in Relation to Various Measures of Olympic Success",
-             subtitle = " X-Variables are each percentage point numbers (other than rank) so that conclusions can be drawn and related across variables.")
+             subtitle = " X-Variables are each percentage point numbers (other than rank) so that conclusions can be drawn and related across variables.",
+             caption = "Olympic data taken from Kaggle*, Voter data taken fromn Sage*.")
     }
   })
   
-  # Generate a regression table of the data ----
+  # generate a summary of the plots
+  output$summary <- renderUI({
+    str1 = "<h6>Many of the relationships between these measures of success and measures of civic engagement are relatively weak, if they exist at all. As might be expected, the relationship between each measure of Summer Olympic Success and Winter Olympic Success is practically uncorrelated with raw voter turnout rates. What may be more surprising, though, is that there are opposing correlations between these measures for Winter Olympic Success and change in percentage of voting-age individuals who vote in a given year's election and the same relationship for Summer Olympic Success. Most winter measures have a positive correlation while most summer measures have negative correlations. Most of these correlation coeffecients, as we see in the \"Models\" tab, are not statistically significant in large part due to the small sample size, but this relationship is still interesting nonetheless. It is also very important to keep in mind that these graphs are showing correlative relationships, not causative ones.<br></h6>"
+    str2 = a("Kaggle", href = "https://www.kaggle.com/the-guardian/olympic-games")
+    str3 = a("Sage", href = "http://sk.sagepub.com.ezp-prod1.hul.harvard.edu/cqpress/voter-turnout-in-the-united-states-1788-2009")
+      
+    HTML(paste(str1, str2, str3, sep = "<br>* "))
+  })
+  
+  # generate a regression table of the data
   output$model <- renderUI({
     
+    # filter data to user-selected season
     lm_data <- data %>% 
       filter(olympics == input$season)
     
+    # create regression output for selected response variable
     if (input$response == "percent") {
       HTML(stargazer(lm(data = lm_data, 
                         percent ~ gold_percent + gold_change + medal_percent + total_change), 
@@ -210,7 +238,7 @@ server <- function(input, output) {
     
   })
   
-  # Generate an HTML table view of the data ----
+  # Generate an HTML page with insights for selected years using HTML tags to create headers and line breaks and text to explain interesting phenomena/voter turnout rates/changes
   output$insights <- renderUI({
     
     if (input$year == 1936) {
@@ -330,5 +358,5 @@ server <- function(input, output) {
   
 }
 
-# Create Shiny app ----
+# Create Shiny app
 shinyApp(ui, server)
