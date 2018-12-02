@@ -6,4 +6,7 @@ I am interested in social effects of the Olympics beyond instilling a sense of p
 ### Olympic Success
 "Olympic Success" can have very many definitions, so I am looking at it in a number of ways. Variables to explore include position in total medal count, gold medal percentage of total gold medals awarded, all medal percentage of total medals awarded, percentage change in gold medals from the previous Olympic Games, percentage change in all medals from the previous Olympic Games, and specific cases of impressive United States performance in various sports in the Olympics.
 
+### Link to Shiny App Website
+https://dillonmsmith17.shinyapps.io/olympic_results_vs_voter_turnout/
+
 Created by Dillon M. Smith as a Harvard University GOV 1005 final project
