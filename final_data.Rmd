@@ -172,21 +172,31 @@ summer_joined <- left_join(summer_final, elections, by = "year") %>%
   select(year, rank, gold_percent, gold_change, medal_percent, total_change, source, percent, percent_change) %>% 
   # select variables with voting data 
   head(25)
+
+final_data <- bind_rows(winter_joined, summer_joined, .id = "olympics") %>% 
+  arrange(year) %>% 
+  mutate(olympics = case_when(olympics == 1 ~ "winter",
+                              olympics == 2 ~ "summer"),
+         gold_change = replace_na(gold_change, 0),
+         total_change = replace_na(total_change, 0))
+  
+  
+write_rds(final_data, "final_app/final_data.rds")
 ```
 
 ```{r create_lm}
 # create linear model for percent
-winter_lm <- glm(percent ~ gold_percent + gold_change + medal_percent + total_change, 
+winter_lm <- glm(percent ~ rank + gold_percent + gold_change + medal_percent + total_change, 
                  data = winter_joined)
 # create linear model for change in percent 
-winter_lm_change <- glm(percent_change ~ gold_percent + gold_change + medal_percent + total_change, 
+winter_lm_change <- glm(percent_change ~ rank + gold_percent + gold_change + medal_percent + total_change, 
                         data = winter_joined)
  
 # create linear model for percent 
-summer_lm <- glm(percent ~ gold_percent + gold_change + medal_percent + total_change, 
+summer_lm <- glm(percent ~ rank + gold_percent + gold_change + medal_percent + total_change, 
                  data = summer_joined)
 # create linear model for change in percent 
-summer_lm_change <- glm(percent_change ~ gold_percent + gold_change + medal_percent + total_change, 
+summer_lm_change <- glm(percent_change ~ rank + gold_percent + gold_change + medal_percent + total_change, 
                         data = summer_joined)
 ```
 
