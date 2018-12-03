@@ -1,6 +1,6 @@
 # Olympic Success and Voter Turnout Rates
 ### Topic
-This is an analysis looking at various measures of United States Olympic success (defined below) as they relates to United States voting turnout rates.
+This is an analysis looking at various measures of United States Olympic success (defined below) as they relate to United States voting turnout rates.
 ### Motivation
 I am interested in social effects of the Olympics beyond instilling a sense of patriotism and pride from success in international competition. Specifically, I hypothesize that within the United States (a capitalist, individualistic nation), seeing fellow compatriots succeed on an international level will be correlated with an increase in voter turnout in the subsequent election (be it presidential or midterm).
 ### Background Information
